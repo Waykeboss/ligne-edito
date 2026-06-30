@@ -1,457 +1,6 @@
 import Head from 'next/head'
-import Script from 'next/script'
 
-export default function Home() {
-  return (
-    <>
-      <Head>
-        <title>Système Editorial IA</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      </Head>
-
-      {/* ══ MODAL SETTINGS ══ */}
-      <div className="modal-overlay hidden" id="settingsModal">
-        <div className="modal">
-          <button className="modal-close" onClick="closeSettings()">✕</button>
-          <h2>⚙️ Configuration</h2>
-          <p className="sub">Clés stockées localement dans votre navigateur.</p>
-          <div className="field"><label>Clé API Anthropic</label><input type="password" id="s-anthropic" placeholder="sk-ant-..." /></div>
-          <div className="field"><label>Token Notion Integration</label><input type="password" id="s-notion-token" placeholder="secret_..." /></div>
-          <div className="field"><label>ID base Fondations</label><input type="text" id="s-db-fondations" /></div>
-          <div className="field"><label>ID base Calendrier</label><input type="text" id="s-db-calendrier" /></div>
-          <div className="field"><label>Token Instagram (IGQ...)</label><input type="password" id="s-meta-token" placeholder="IGQVJx..." /></div>
-
-          <div className="field" style={{borderTop:'1px solid rgba(255,255,255,.08)',paddingTop:'14px',marginTop:'4px'}}>
-            <label>LinkedIn — <span id="li-status" style={{color:'var(--muted)',fontWeight:400}}>non connecté</span></label>
-            <button className="btn btn-outline btn-block" onClick="connectLinkedIn()" id="btn-li-connect" style={{marginTop:'8px'}}>
-              💼 Connecter LinkedIn
-            </button>
-            <input type="password" id="s-linkedin-token" placeholder="Colle ton token LinkedIn ici" style={{marginTop:'8px'}} />
-          </div>
-
-          <div className="field" style={{borderTop:'1px solid rgba(255,255,255,.08)',paddingTop:'14px',marginTop:'4px'}}>
-            <label>YouTube — <span id="yt-status" style={{color:'var(--muted)',fontWeight:400}}>non connecté</span></label>
-            <button className="btn btn-outline btn-block" onClick="connectYouTube()" id="btn-yt-connect" style={{marginTop:'8px'}}>
-              ▶️ Connecter YouTube
-            </button>
-          </div>
-
-          <div className="info-setup">
-            <strong>Token Notion</strong> → <a href="https://www.notion.so/my-integrations" target="_blank" rel="noreferrer">notion.so/my-integrations</a> → Créer → copier <code>secret_...</code><br />
-            Puis dans chaque base Notion → ··· → <strong>Connections</strong> → ajouter l&apos;intégration<br /><br />
-            <strong>Token Instagram</strong> → Graph API Explorer → permissions <code>instagram_business_basic</code> + <code>instagram_business_content_publish</code><br /><br />
-            <strong>LinkedIn</strong> → Cliquer &quot;Connecter LinkedIn&quot; → autoriser → token automatique<br /><br />
-            <strong>YouTube</strong> → Cliquer &quot;Connecter YouTube&quot; → compte Google → autoriser
-          </div>
-          <div className="modal-actions">
-            <button className="btn btn-outline" onClick="closeSettings()">Annuler</button>
-            <button className="btn btn-primary" onClick="saveSettings()">✓ Sauvegarder</button>
-          </div>
-        </div>
-      </div>
-
-      {/* ══ HEADER ══ */}
-      <header className="header">
-        <div className="logo"><div className="logo-icon">✦</div> Système Editorial IA</div>
-        <div className="header-right">
-          <button className="btn-sm" onClick="openSettings()">⚙️ Config</button>
-        </div>
-      </header>
-
-      {/* ══ TABS ══ */}
-      <nav className="tabs">
-        <div className="tab active" onClick="switchTab('fondations')">🏗️ Fondations</div>
-        <div className="tab" onClick="switchTab('strategie')">📅 Stratégie</div>
-        <div className="tab" onClick="switchTab('contenu')">✦ Contenu</div>
-        <div className="tab" onClick="switchTab('publication')">↗ Publication</div>
-      </nav>
-
-      {/* ══ TAB 1 — FONDATIONS ══ */}
-      <div className="panel active" id="tab-fondations">
-
-        <div className="info-box">
-          <strong>Étape 0 — Fondations</strong><br />
-          Remplis cette fiche une seule fois par offre. Tout le contenu généré ensuite en découle. Si tu es bloqué sur une question, clique sur <strong>✦ Suggérer avec l&apos;IA</strong>.
-        </div>
-
-        <div className="section-label">L&apos;offre</div>
-        <div className="field-row">
-          <div className="field"><label>Nom de l&apos;offre / produit</label><input type="text" id="f-nom" placeholder="Ex : Formation IA pour équipes comm'" /></div>
-          <div className="field-row" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
-            <div className="field"><label>Statut</label>
-              <select id="f-statut">
-                <option>En construction</option><option>Active</option><option>En pause</option><option>Archivée</option>
-              </select>
-            </div>
-            <div className="field"><label>Plateforme cible</label>
-              <select id="f-plateforme">
-                <option>Instagram</option><option>LinkedIn</option><option>TikTok</option><option>YouTube</option><option>Multi-plateformes</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="section-label">Le problème d&apos;abord</div>
-        <div className="field">
-          <label>Quel problème précis ton offre résout-elle ?</label>
-          <textarea id="f-probleme" rows="3" placeholder="Ex : Les équipes comm' passent 15h à créer du contenu chaque semaine, s'épuisent et produisent du contenu générique qui ne vend pas..."></textarea>
-          <button className="ai-suggest" onClick="suggestField('f-probleme', 'probleme')">✦ Suggérer avec l&apos;IA</button>
-        </div>
-
-        <div className="section-label">L&apos;avatar</div>
-        <div className="field">
-          <label>Qui souffre de ce problème ? (décris précisément)</label>
-          <textarea id="f-avatar" rows="3" placeholder="Ex : Directeur comm' d'une PME de 20-100 personnes, 35-50 ans, débordé, pas formé à l'IA, peur de paraître non-légitime si IA détectée..."></textarea>
-          <button className="ai-suggest" onClick="suggestField('f-avatar', 'avatar')">✦ Suggérer avec l&apos;IA</button>
-        </div>
-        <div className="field">
-          <label>Quel est l&apos;impact de ce problème dans sa vie (pro + perso) ?</label>
-          <textarea id="f-impact" rows="3" placeholder="Ex : Stress constant, heures sup le soir, contenu qui n'engage pas, sentiment d'échec face aux concurrents, peur de perdre son poste..."></textarea>
-          <button className="ai-suggest" onClick="suggestField('f-impact', 'impact')">✦ Suggérer avec l&apos;IA</button>
-        </div>
-
-        <div className="section-label">La différenciation</div>
-        <div className="field">
-          <label>Pourquoi les solutions traditionnelles ne fonctionnent pas ?</label>
-          <textarea id="f-solutions" rows="3" placeholder="Ex : Les agences sont trop chères, les formations génériques ne sont pas adaptées au contexte de l'entreprise, les outils IA sans méthode créent du contenu sans âme..."></textarea>
-          <button className="ai-suggest" onClick="suggestField('f-solutions', 'solutions')">✦ Suggérer avec l&apos;IA</button>
-        </div>
-        <div className="field">
-          <label>Pourquoi ta solution est supérieure ?</label>
-          <textarea id="f-superieure" rows="3" placeholder="Ex : Formation sur mesure dans leur entreprise, méthode IA + terrain, résultats en 6 semaines, économie de 10h/semaine par collaborateur..."></textarea>
-          <button className="ai-suggest" onClick="suggestField('f-superieure', 'superieure')">✦ Suggérer avec l&apos;IA</button>
-        </div>
-
-        <div className="section-label">Les croyances à construire</div>
-        <p style={{fontSize:'.83rem',color:'var(--muted)',marginBottom:'12px'}}>Qu&apos;est-ce que ton audience doit croire avant d&apos;acheter ? (méthode Antoine BM)</p>
-        <div className="croyances-list" id="croyances-list">
-          <div className="croyance-item"><div className="croyance-num">1</div><input type="text" placeholder="Ex : Mon tapis est un danger pour ma santé (gravité du problème)" /></div>
-          <div className="croyance-item"><div className="croyance-num">2</div><input type="text" placeholder="Ex : Passer l'aspirateur ne suffit pas (solutions traditionnelles inefficaces)" /></div>
-          <div className="croyance-item"><div className="croyance-num">3</div><input type="text" placeholder="Ex : Il existe une méthode professionnelle efficace (supériorité de la solution)" /></div>
-        </div>
-        <button className="add-croyance" onClick="addCroyance()">+ Ajouter une croyance</button>
-        <button className="ai-suggest" style={{marginTop:'8px'}} onClick="suggestCroyances()">✦ Générer les croyances avec l&apos;IA</button>
-
-        <hr className="divider" />
-
-        <div style={{display:'flex',gap:'12px'}}>
-          <button className="btn btn-primary" id="btn-save-fondations" onClick="saveFondations()">↗ Sauvegarder dans Notion</button>
-          <button className="btn btn-outline" onClick="switchTab('contenu')">Créer du contenu →</button>
-        </div>
-
-      </div>
-
-      {/* ══ TAB 2 — STRATÉGIE ══ */}
-      <div className="panel" id="tab-strategie">
-
-        <div className="info-box">
-          <strong>Stratégie Reels Instagram</strong><br />
-          Définis ton type d&apos;offre et ton rythme. Claude génère ton planning hebdomadaire avec le bon mix de Reels pour construire les croyances et vendre.
-        </div>
-
-        {/* Sélecteur offre */}
-        <div className="offre-selector" style={{marginBottom:'24px'}}>
-          <label>Sur quelle offre travailles-tu ?</label>
-          <select id="s-offre-select" onChange="selectOffreStrategie(this.value)" style={{width:'100%',marginTop:'6px'}}>
-            <option value="">— Sélectionne une offre —</option>
-          </select>
-        </div>
-
-        <div className="section-label">Type d&apos;offre</div>
-        <div className="offre-type-grid">
-          <div className="offre-type-card selected" id="type-service" onClick="selectType('service')">
-            <div className="type-icon">🤝</div>
-            <h4>Service</h4>
-            <p>Coaching, accompagnement, consulting, audit...</p>
-          </div>
-          <div className="offre-type-card" id="type-produit" onClick="selectType('produit')">
-            <div className="type-icon">📦</div>
-            <h4>Produit</h4>
-            <p>Formation, template, outil, ressource...</p>
-          </div>
-        </div>
-
-        <div className="field-row" style={{marginBottom:'20px'}}>
-          <div className="field">
-            <label>Prix de l&apos;offre (€)</label>
-            <input type="number" id="s-prix" placeholder="Ex : 2000" />
-          </div>
-          <div className="field">
-            <label>CTA principal</label>
-            <select id="s-cta">
-              <option value="DM">Envoie-moi un DM</option>
-              <option value="lien bio">Lien en bio</option>
-              <option value="commentaire">Commente pour recevoir</option>
-              <option value="appel">Réserve un appel</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="section-label">Rythme de publication</div>
-        <div className="rythme-grid">
-          <div className="rythme-card" id="rythme-3" onClick="selectRythme(3)">
-            <div className="rythme-num">3</div>
-            <p>Reels / semaine</p>
-            <p style={{fontSize:'.7rem',marginTop:'4px',color:'var(--border)'}}>Démarrage</p>
-          </div>
-          <div className="rythme-card selected" id="rythme-5" onClick="selectRythme(5)">
-            <div className="rythme-num">5</div>
-            <p>Reels / semaine</p>
-            <p style={{fontSize:'.7rem',marginTop:'4px',color:'var(--green)'}}>Recommandé</p>
-          </div>
-          <div className="rythme-card" id="rythme-7" onClick="selectRythme(7)">
-            <div className="rythme-num">7</div>
-            <p>Reels / semaine</p>
-            <p style={{fontSize:'.7rem',marginTop:'4px',color:'var(--border)'}}>Intensif</p>
-          </div>
-        </div>
-
-        <div className="section-label">Semaine de départ</div>
-        <div className="field" style={{maxWidth:'220px'}}>
-          <label>Date du lundi</label>
-          <input type="date" id="s-semaine" />
-        </div>
-
-        <button className="btn btn-primary btn-block" id="btn-planning" onClick="genererPlanning()" style={{marginBottom:'28px'}}>
-          📅 Générer le planning de la semaine
-        </button>
-
-        {/* RÉSULTATS PLANNING */}
-        <div id="planning-results" style={{display:'none'}}>
-
-          <div className="section-label">Tunnel de vente</div>
-          <div className="tunnel-bar" id="tunnel-bar"></div>
-          <div className="tunnel-legend">
-            <div className="tunnel-legend-item"><div className="legend-dot" style={{background:'var(--red)'}}></div> Attirer</div>
-            <div className="tunnel-legend-item"><div className="legend-dot" style={{background:'var(--orange)'}}></div> Éduquer</div>
-            <div className="tunnel-legend-item"><div className="legend-dot" style={{background:'var(--blue)'}}></div> Prouver</div>
-            <div className="tunnel-legend-item"><div className="legend-dot" style={{background:'var(--green)'}}></div> Convertir</div>
-          </div>
-
-          <div className="section-label">Planning de la semaine</div>
-          <div className="planning-grid" id="planning-grid"></div>
-
-          <button className="btn btn-green btn-block" id="btn-save-planning" onClick="savePlanning()">
-            ↗ Envoyer tout dans Notion
-          </button>
-        </div>
-
-      </div>
-
-      {/* ══ TAB 3 — CONTENU ══ */}
-      <div className="panel" id="tab-contenu">
-
-        {/* CHARGER UNE FICHE EXISTANTE */}
-        <div className="card" style={{marginBottom:'20px'}}>
-          <div className="card-header">
-            <h4>📋 Charger une fiche depuis Notion</h4>
-            <button className="btn-sm" onClick="loadFichesNotion()">↺ Rafraîchir</button>
-          </div>
-          <div className="card-body" style={{padding:'12px'}}>
-            <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
-              <select id="c-fiche-select" onChange="chargerFiche(this.value)" style={{flex:1}}>
-                <option value="">— Sélectionne un Reel à compléter —</option>
-              </select>
-            </div>
-            <div id="fiche-resume" style={{display:'none',marginTop:'10px',background:'var(--surface2)',borderRadius:'8px',padding:'10px',fontSize:'.81rem',color:'var(--muted)',lineHeight:1.6}}></div>
-          </div>
-        </div>
-
-        <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'20px'}}>
-          <div style={{flex:1,height:'1px',background:'var(--border)'}}></div>
-          <span style={{fontSize:'.78rem',color:'var(--muted)'}}>ou remplis manuellement</span>
-          <div style={{flex:1,height:'1px',background:'var(--border)'}}></div>
-        </div>
-
-        {/* Sélecteur offre */}
-        <div className="offre-selector">
-          <label>Sur quelle offre travailles-tu ?</label>
-          <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
-            <select id="c-offre-select" onChange="selectOffre(this.value)" style={{flex:1}}>
-              <option value="">⏳ Chargement des offres...</option>
-            </select>
-            <button className="btn-sm" onClick="loadOffres()">↺</button>
-            <button className="btn-sm" onClick="switchTab('fondations')">+ Nouvelle</button>
-          </div>
-          <div id="offre-resume" style={{display:'none',marginTop:'12px',background:'var(--surface2)',borderRadius:'8px',padding:'12px',fontSize:'.82rem',color:'var(--muted)',lineHeight:1.6}}></div>
-        </div>
-
-        <div className="field-row-3">
-          <div className="field">
-            <label>Croyance à cibler</label>
-            <select id="c-croyance">
-              <option value="">✦ Suggérer par l&apos;IA</option>
-              <option>Gravité du problème</option>
-              <option>Inefficacité solutions existantes</option>
-              <option>Supériorité de la méthode</option>
-              <option>Légitimité du formateur</option>
-              <option>Urgence d&apos;agir</option>
-            </select>
-          </div>
-          <div className="field">
-            <label>Format</label>
-            <select id="c-format">
-              <option>Reel</option><option>Carrousel</option><option>Story</option><option>Photo</option>
-            </select>
-          </div>
-          <div className="field">
-            <label>Plateforme</label>
-            <select id="c-plateforme">
-              <option>Instagram</option><option>LinkedIn</option><option>TikTok</option><option>YouTube</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="field">
-          <label>Idée / angle du post (optionnel — laisse vide pour que Claude décide)</label>
-          <textarea id="c-idee" rows="2" placeholder="Ex : Montrer que passer 3h sur un post LinkedIn sans méthode IA est contre-productif..."></textarea>
-        </div>
-        <div className="field">
-          <label>Contexte additionnel</label>
-          <textarea id="c-contexte" rows="2" placeholder="Ex : Ciblé DRH, ton expert mais accessible, inclure un exemple chiffré..."></textarea>
-        </div>
-
-        <button className="btn btn-primary btn-block" id="btn-generate" onClick="generateContenu()" style={{marginBottom:'24px'}}>
-          ✦ Générer le contenu
-        </button>
-
-        {/* RÉSULTATS */}
-        <div id="contenu-results" style={{display:'none'}}>
-
-          {/* Accroche suggérée */}
-          <div className="section-label">Choisissez votre accroche</div>
-          <div className="hooks-grid" id="hooks-grid"></div>
-
-          {/* Corps */}
-          <div className="card">
-            <div className="card-header"><h4>Corps du post</h4><button className="copy-btn" onClick="copyEl('r-corps')">Copier</button></div>
-            <div className="card-body"><textarea id="r-corps" rows="8"></textarea></div>
-          </div>
-
-          {/* Script FLORA */}
-          <div className="card">
-            <div className="card-header">
-              <h4>🌸 Script / Brief FLORA</h4>
-              <div style={{display:'flex',gap:'8px'}}>
-                <span className="badge badge-purple" id="r-format-badge"></span>
-                <button className="copy-btn" onClick="copyEl('r-flora')">Copier</button>
-              </div>
-            </div>
-            <div className="card-body"><textarea id="r-flora" rows="5"></textarea></div>
-          </div>
-
-          {/* Brief visuel */}
-          <div className="card">
-            <div className="card-header"><h4>Brief visuel (instructions générales)</h4><button className="copy-btn" onClick="copyEl('r-brief')">Copier</button></div>
-            <div className="card-body"><textarea id="r-brief" rows="3"></textarea></div>
-          </div>
-
-          <hr className="divider" />
-
-          {/* Titre + save */}
-          <div className="field">
-            <label>Titre de la fiche (pour Notion)</label>
-            <input type="text" id="r-titre" placeholder="Titre du post..." />
-          </div>
-          <div className="field-row">
-            <div className="field">
-              <label>Date de publication</label>
-              <input type="date" id="r-date" />
-            </div>
-            <div className="field">
-              <label>Statut</label>
-              <select id="r-statut">
-                <option>Idée</option><option>En rédaction</option><option>Brief FLORA envoyé</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{display:'flex',gap:'12px'}}>
-            <button className="btn btn-green" id="btn-save-contenu" onClick="saveContenu()">↗ Enregistrer dans Notion</button>
-            <button className="btn btn-outline" onClick="switchTab('publication')">Ajouter le média →</button>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ══ TAB 4 — PUBLICATION ══ */}
-      <div className="panel" id="tab-publication">
-
-        <div className="info-box">
-          <strong>Étape finale</strong> — Le contenu texte est dans Notion. Tu as créé le média dans FLORA. Il ne reste qu&apos;à assembler et programmer la publication.
-        </div>
-
-        {/* Pipeline statut */}
-        <div className="pipeline">
-          <div className="pipeline-step done"><span className="step-icon">✓</span>Fondations</div>
-          <div className="pipeline-step done"><span className="step-icon">✓</span>Contenu texte</div>
-          <div className="pipeline-step active"><span className="step-icon">🌸</span>Média FLORA</div>
-          <div className="pipeline-step"><span className="step-icon">📅</span>Programmé</div>
-          <div className="pipeline-step"><span className="step-icon">✅</span>Publié</div>
-        </div>
-
-        <div className="section-label">Le post</div>
-        <div className="field-row">
-          <div className="field"><label>Titre du post (pour retrouver dans Notion)</label><input type="text" id="p-titre" placeholder="Titre exact de la fiche Notion..." /></div>
-          <div className="field"><label>ID de la page Notion (optionnel)</label><input type="text" id="p-page-id" placeholder="Coller l'ID depuis l'URL Notion..." /></div>
-        </div>
-
-        <div className="section-label">Le média (créé dans FLORA)</div>
-        <img id="p-preview" className="preview-img" src="" alt="" />
-        <div className="drop-zone" id="p-drop"
-          onDragOver="dragOver(event)" onDragLeave="dragLeave(event)" onDrop="dropFile(event,'p-preview','p-media-url')">
-          <input type="file" accept="image/*,video/*" onChange="fileSelect(event,'p-preview','p-media-url')" />
-          <div style={{fontSize:'2rem'}}>🎬</div>
-          <p>Glisse ton Reel / image / carrousel ici<br /><span style={{fontSize:'.75rem',color:'var(--border)'}}>ou clique pour choisir — MP4, PNG, JPG, WEBP</span></p>
-        </div>
-        <div className="field" style={{marginTop:'10px'}}>
-          <label>Ou URL du média hébergé (Drive, Dropbox…)</label>
-          <input type="url" id="p-media-url" placeholder="https://..." />
-        </div>
-
-        <div className="section-label">Programmation</div>
-        <div className="field-row-3">
-          <div className="field">
-            <label>Date de publication</label>
-            <input type="date" id="p-date" />
-          </div>
-          <div className="field">
-            <label>Plateforme</label>
-            <select id="p-plateforme">
-              <option>Instagram</option><option>LinkedIn</option><option>TikTok</option><option>YouTube</option>
-            </select>
-          </div>
-          <div className="field">
-            <label>Nouveau statut</label>
-            <select id="p-statut">
-              <option>Média reçu</option><option>Prêt à publier</option>
-            </select>
-          </div>
-        </div>
-
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:'8px',marginTop:'8px'}}>
-          <button className="btn btn-outline btn-block" id="btn-publish" onClick="publishPost()">
-            ↗ Notion
-          </button>
-          <button className="btn btn-primary btn-block" id="btn-instagram" onClick="publishToInstagram()" style={{background:'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)',border:'none'}}>
-            📸 Instagram
-          </button>
-          <button className="btn btn-primary btn-block" id="btn-linkedin" onClick="publishToLinkedIn()" style={{background:'#0077b5',border:'none'}}>
-            💼 LinkedIn
-          </button>
-          <button className="btn btn-primary btn-block" id="btn-youtube" onClick="publishToYouTube()" style={{background:'#ff0000',border:'none'}}>
-            ▶️ YouTube
-          </button>
-        </div>
-        {/* Input fichier vidéo YouTube (caché) */}
-        <input type="file" id="yt-file-input" accept="video/*" style={{display:'none'}} />
-
-      </div>
-
-      {/* TOASTS */}
-      <div className="toast-container" id="toasts"></div>
-
-      <Script id="app-logic" strategy="afterInteractive">{`
+const appJS = `
 /* ════════════════════════════════
    ÉTAT GLOBAL
 ════════════════════════════════ */
@@ -507,16 +56,16 @@ async function loadOffres() {
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'Notion-Version': '2022-06-28' },
-      body: JSON.stringify({ sorts: [{ property: 'Nom de l\\'offre', direction: 'ascending' }] })
+      body: JSON.stringify({ sorts: [{ property: "Nom de l'offre", direction: 'ascending' }] })
     });
     if (!resp.ok) throw new Error('Erreur Notion');
     const data = await resp.json();
     offresCache = data.results.map(p => ({
       id: p.id,
-      nom: p.properties['Nom de l\\'offre']?.title?.[0]?.plain_text || 'Sans titre',
+      nom: p.properties["Nom de l'offre"]?.title?.[0]?.plain_text || 'Sans titre',
       probleme: p.properties['Problème principal']?.rich_text?.[0]?.plain_text || '',
       avatar: p.properties['Avatar client']?.rich_text?.[0]?.plain_text || '',
-      impact: p.properties['Impact dans la vie de l\\'avatar']?.rich_text?.[0]?.plain_text || '',
+      impact: p.properties["Impact dans la vie de l'avatar"]?.rich_text?.[0]?.plain_text || '',
       solutions: p.properties['Solutions traditionnelles inefficaces']?.rich_text?.[0]?.plain_text || '',
       superieure: p.properties['Pourquoi ta solution est supérieure']?.rich_text?.[0]?.plain_text || '',
       croyances: p.properties['Croyances à construire']?.rich_text?.[0]?.plain_text || '',
@@ -574,8 +123,8 @@ function selectOffre(id) {
 
   // Charger les croyances dans le select
   const croyanceSelect = document.getElementById('c-croyance');
-  croyanceSelect.innerHTML = '<option value="">✦ Suggérer par l\\'IA</option>';
-  const croyancesStandard = ['Gravité du problème','Inefficacité solutions existantes','Supériorité de la méthode','Légitimité du formateur','Urgence d\\'agir'];
+  croyanceSelect.innerHTML = "<option value=''>✦ Suggérer par l'IA</option>";
+  const croyancesStandard = ['Gravité du problème','Inefficacité solutions existantes','Supériorité de la méthode','Légitimité du formateur',"Urgence d'agir"];
   croyancesStandard.forEach(c => {
     const opt = document.createElement('option'); opt.value = c; opt.textContent = c;
     croyanceSelect.appendChild(opt);
@@ -612,8 +161,8 @@ function switchTab(tab) {
    SETTINGS
 ════════════════════════════════ */
 /* ── YouTube OAuth ── */
-const YT_CLIENT_ID     = process.env.NEXT_PUBLIC_YT_CLIENT_ID;
-const YT_CLIENT_SECRET = process.env.NEXT_PUBLIC_YT_CLIENT_SECRET;
+const YT_CLIENT_ID     = '${process.env.NEXT_PUBLIC_YT_CLIENT_ID}';
+const YT_CLIENT_SECRET = '${process.env.NEXT_PUBLIC_YT_CLIENT_SECRET}';
 const YT_REDIRECT      = 'https://ligne-edito-next.vercel.app';
 const YT_SCOPE         = 'https://www.googleapis.com/auth/youtube.upload';
 
@@ -693,7 +242,7 @@ async function publishToYouTube() {
       }
 
       const uploadUrl = initResp.headers.get('Location');
-      if (!uploadUrl) throw new Error('Impossible d\\'obtenir l\\'URL d\\'upload YouTube');
+      if (!uploadUrl) throw new Error("Impossible d'obtenir l'URL d'upload YouTube");
 
       // 2. Uploader le fichier
       toast('Upload en cours... (' + Math.round(file.size/1024/1024) + ' Mo)', 'success');
@@ -725,8 +274,8 @@ async function publishToYouTube() {
 }
 
 /* ── LinkedIn OAuth ── */
-const LI_CLIENT_ID     = process.env.NEXT_PUBLIC_LI_CLIENT_ID;
-const LI_CLIENT_SECRET = process.env.NEXT_PUBLIC_LI_CLIENT_SECRET;
+const LI_CLIENT_ID     = '${process.env.NEXT_PUBLIC_LI_CLIENT_ID}';
+const LI_CLIENT_SECRET = '${process.env.NEXT_PUBLIC_LI_CLIENT_SECRET}';
 const LI_REDIRECT      = 'https://ligne-edito-next.vercel.app';
 const LI_SCOPE         = 'openid profile w_member_social';
 
@@ -749,7 +298,7 @@ async function handleLinkedInCallback() {
   window.history.replaceState({}, '', window.location.pathname);
 
   if (error) {
-    toast('LinkedIn a refusé l\\'autorisation : ' + (params.get('error_description') || error), 'error');
+    toast("LinkedIn a refusé l'autorisation : " + (params.get('error_description') || error), 'error');
     return;
   }
 
@@ -964,7 +513,7 @@ async function savePlanning() {
   const token = localStorage.getItem('notion_token');
   const dbId  = (localStorage.getItem('db_calendrier') || DB_CALENDRIER).replace(/-/g,'');
   if (!token) { toast('Token Notion manquant', 'error'); return; }
-  if (!planningData.length) { toast('Génère d\\'abord le planning', 'error'); return; }
+  if (!planningData.length) { toast("Génère d'abord le planning", 'error'); return; }
 
   setLoading('btn-save-planning', true, 'Envoi dans Notion...');
 
@@ -974,7 +523,7 @@ async function savePlanning() {
     'Attirer': 'Gravité du problème',
     'Éduquer': 'Inefficacité solutions existantes',
     'Prouver': 'Supériorité de la méthode',
-    'Convertir': 'Urgence d\\'agir'
+    "Convertir": "Urgence d'agir"
   };
 
   try {
@@ -1027,7 +576,7 @@ function getCroyances() {
 async function suggestCroyances() {
   const probleme = document.getElementById('f-probleme').value;
   const offre = document.getElementById('f-nom').value;
-  if (!probleme) { toast('Décris d\\'abord le problème', 'error'); return; }
+  if (!probleme) { toast("Décris d'abord le problème", 'error'); return; }
   const apiKey = localStorage.getItem('anthropic_key');
   if (!apiKey) { toast('Clé API manquante', 'error'); return; }
 
@@ -1083,7 +632,7 @@ async function saveFondations() {
   if (!token) { toast('Token Notion manquant', 'error'); return; }
 
   const nom = document.getElementById('f-nom').value.trim();
-  if (!nom) { toast('Ajoute le nom de l\\'offre', 'error'); return; }
+  if (!nom) { toast("Ajoute le nom de l'offre", 'error'); return; }
 
   setLoading('btn-save-fondations', true, 'Sauvegarde...');
 
@@ -1092,10 +641,10 @@ async function saveFondations() {
   const body = {
     parent: { database_id: dbId },
     properties: {
-      'Nom de l\\'offre':                   { title: [{ text: { content: nom } }] },
+      "Nom de l'offre":                   { title: [{ text: { content: nom } }] },
       'Problème principal':                 { rich_text: [{ text: { content: document.getElementById('f-probleme').value } }] },
       'Avatar client':                      { rich_text: [{ text: { content: document.getElementById('f-avatar').value } }] },
-      'Impact dans la vie de l\\'avatar':    { rich_text: [{ text: { content: document.getElementById('f-impact').value } }] },
+      "Impact dans la vie de l'avatar":    { rich_text: [{ text: { content: document.getElementById('f-impact').value } }] },
       'Solutions traditionnelles inefficaces': { rich_text: [{ text: { content: document.getElementById('f-solutions').value } }] },
       'Pourquoi ta solution est supérieure':{ rich_text: [{ text: { content: document.getElementById('f-superieure').value } }] },
       'Croyances à construire':             { rich_text: [{ text: { content: croyances } }] },
@@ -1107,7 +656,6 @@ async function saveFondations() {
   try {
     await notionPost('pages', body);
     toast('✓ Fondations sauvegardées dans Notion', 'success');
-    document.getElementById('c-offre-nom').value = nom;
     setTimeout(() => switchTab('contenu'), 1200);
   } catch(e) { toast('Erreur Notion : ' + e.message, 'error'); }
   finally { setLoading('btn-save-fondations', false, '↗ Sauvegarder dans Notion'); }
@@ -1133,7 +681,7 @@ async function generateContenu() {
 
   const croyanceInstr = croyance
     ? \`La croyance à construire dans ce post est : "\${croyance}".\`
-    : \`Choisis la croyance la plus pertinente à construire parmi : Gravité du problème / Inefficacité solutions existantes / Supériorité de la méthode / Légitimité du formateur / Urgence d'agir. Indique-la dans "croyance".\`;
+    : "Choisis la croyance la plus pertinente à construire parmi : Gravité du problème / Inefficacité solutions existantes / Supériorité de la méthode / Légitimité du formateur / Urgence d'agir. Indique-la dans \"croyance\".";
 
   const fondationsContext = selectedOffre ? \`
 FONDATIONS DE L'OFFRE :
@@ -1314,7 +862,7 @@ async function saveContenu() {
   const token = localStorage.getItem('notion_token');
   const dbId = (localStorage.getItem('db_calendrier') || DB_CALENDRIER).replace(/-/g,'');
   if (!token) { toast('Token Notion manquant', 'error'); return; }
-  if (!generatedData) { toast('Génère d\\'abord le contenu', 'error'); return; }
+  if (!generatedData) { toast("Génère d'abord le contenu", 'error'); return; }
 
   const titre = document.getElementById('r-titre').value.trim();
   if (!titre) { toast('Ajoute un titre', 'error'); return; }
@@ -1377,7 +925,7 @@ async function publishPost() {
   const plateforme = document.getElementById('p-plateforme').value;
 
   if (!token) { toast('Token Notion manquant', 'error'); return; }
-  if (!pageId) { toast('Colle l\\'ID de la page Notion', 'error'); return; }
+  if (!pageId) { toast("Colle l'ID de la page Notion", 'error'); return; }
 
   setLoading('btn-publish', true, 'Mise à jour...');
 
@@ -1439,11 +987,11 @@ async function publishToInstagram() {
         throw new Error(
           'Token invalide ou sans accès Instagram.\\n\\n' +
           '→ Dans ton app Meta → Instagram → "Générer un token" (commence par IGQ...)\\n' +
-          '→ Ce n\\'est PAS le User Token Facebook (EAA...)'
+          "→ Ce n'est PAS le User Token Facebook (EAA...)"
         );
       }
     }
-    if (!igId) throw new Error('Impossible de récupérer l\\'ID Instagram.');
+    if (!igId) throw new Error("Impossible de récupérer l'ID Instagram.");
 
     // API base + proxy CORS pour les requêtes POST depuis le navigateur
     const apiBase = 'https://graph.instagram.com/v19.0';
@@ -1677,9 +1225,463 @@ function previewFile(file, imgId, urlId) {
     reader.onload = e => { const img = document.getElementById(imgId); img.src = e.target.result; img.classList.add('show'); };
     reader.readAsDataURL(file);
   }
-  toast('Média chargé — ajoute l\\'URL hébergée pour Notion', 'info');
+  toast("Média chargé — ajoute l'URL hébergée pour Notion", 'info');
 }
-`}</Script>
+`
+
+export default function Home() {
+  const htmlBody = `
+<!-- ══ MODAL SETTINGS ══ -->
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeSettings()">✕</button>
+    <h2>⚙️ Configuration</h2>
+    <p class="sub">Clés stockées localement dans votre navigateur.</p>
+    <div class="field"><label>Clé API Anthropic</label><input type="password" id="s-anthropic" placeholder="sk-ant-..." /></div>
+    <div class="field"><label>Token Notion Integration</label><input type="password" id="s-notion-token" placeholder="secret_..." /></div>
+    <div class="field"><label>ID base Fondations</label><input type="text" id="s-db-fondations" /></div>
+    <div class="field"><label>ID base Calendrier</label><input type="text" id="s-db-calendrier" /></div>
+    <div class="field"><label>Token Instagram (IGQ...)</label><input type="password" id="s-meta-token" placeholder="IGQVJx..." /></div>
+
+    <div class="field" style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px;margin-top:4px">
+      <label>LinkedIn — <span id="li-status" style="color:var(--muted);font-weight:400">non connecté</span></label>
+      <button class="btn btn-outline btn-block" onclick="connectLinkedIn()" id="btn-li-connect" style="margin-top:8px">
+        💼 Connecter LinkedIn
+      </button>
+      <input type="password" id="s-linkedin-token" placeholder="Colle ton token LinkedIn ici" style="margin-top:8px" />
+    </div>
+
+    <div class="field" style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px;margin-top:4px">
+      <label>YouTube — <span id="yt-status" style="color:var(--muted);font-weight:400">non connecté</span></label>
+      <button class="btn btn-outline btn-block" onclick="connectYouTube()" id="btn-yt-connect" style="margin-top:8px">
+        ▶️ Connecter YouTube
+      </button>
+    </div>
+
+    <div class="info-setup">
+      <strong>Token Notion</strong> → <a href="https://www.notion.so/my-integrations" target="_blank" rel="noreferrer">notion.so/my-integrations</a> → Créer → copier <code>secret_...</code><br />
+      Puis dans chaque base Notion → ··· → <strong>Connections</strong> → ajouter l'intégration<br /><br />
+      <strong>Token Instagram</strong> → Graph API Explorer → permissions <code>instagram_business_basic</code> + <code>instagram_business_content_publish</code><br /><br />
+      <strong>LinkedIn</strong> → Cliquer "Connecter LinkedIn" → autoriser → token automatique<br /><br />
+      <strong>YouTube</strong> → Cliquer "Connecter YouTube" → compte Google → autoriser
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeSettings()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveSettings()">✓ Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<header class="header">
+  <div class="logo"><div class="logo-icon">✦</div> Système Editorial IA</div>
+  <div class="header-right">
+    <button class="btn-sm" onclick="openSettings()">⚙️ Config</button>
+  </div>
+</header>
+
+<!-- ══ TABS ══ -->
+<nav class="tabs">
+  <div class="tab active" onclick="switchTab('fondations')">🏗️ Fondations</div>
+  <div class="tab" onclick="switchTab('strategie')">📅 Stratégie</div>
+  <div class="tab" onclick="switchTab('contenu')">✦ Contenu</div>
+  <div class="tab" onclick="switchTab('publication')">↗ Publication</div>
+</nav>
+
+<!-- ══ TAB 1 — FONDATIONS ══ -->
+<div class="panel active" id="tab-fondations">
+
+  <div class="info-box">
+    <strong>Étape 0 — Fondations</strong><br>
+    Remplis cette fiche une seule fois par offre. Tout le contenu généré ensuite en découle. Si tu es bloqué sur une question, clique sur <strong>✦ Suggérer avec l'IA</strong>.
+  </div>
+
+  <div class="section-label">L'offre</div>
+  <div class="field-row">
+    <div class="field"><label>Nom de l'offre / produit</label><input type="text" id="f-nom" placeholder="Ex : Formation IA pour équipes comm'" /></div>
+    <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Statut</label>
+        <select id="f-statut">
+          <option>En construction</option><option>Active</option><option>En pause</option><option>Archivée</option>
+        </select>
+      </div>
+      <div class="field"><label>Plateforme cible</label>
+        <select id="f-plateforme">
+          <option>Instagram</option><option>LinkedIn</option><option>TikTok</option><option>YouTube</option><option>Multi-plateformes</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Le problème d'abord</div>
+  <div class="field">
+    <label>Quel problème précis ton offre résout-elle ?</label>
+    <textarea id="f-probleme" rows="3" placeholder="Ex : Les équipes comm' passent 15h à créer du contenu chaque semaine, s'épuisent et produisent du contenu générique qui ne vend pas..."></textarea>
+    <button class="ai-suggest" onclick="suggestField('f-probleme', 'probleme')">✦ Suggérer avec l'IA</button>
+  </div>
+
+  <div class="section-label">L'avatar</div>
+  <div class="field">
+    <label>Qui souffre de ce problème ? (décris précisément)</label>
+    <textarea id="f-avatar" rows="3" placeholder="Ex : Directeur comm' d'une PME de 20-100 personnes, 35-50 ans, débordé, pas formé à l'IA, peur de paraître non-légitime si IA détectée..."></textarea>
+    <button class="ai-suggest" onclick="suggestField('f-avatar', 'avatar')">✦ Suggérer avec l'IA</button>
+  </div>
+  <div class="field">
+    <label>Quel est l'impact de ce problème dans sa vie (pro + perso) ?</label>
+    <textarea id="f-impact" rows="3" placeholder="Ex : Stress constant, heures sup le soir, contenu qui n'engage pas, sentiment d'échec face aux concurrents, peur de perdre son poste..."></textarea>
+    <button class="ai-suggest" onclick="suggestField('f-impact', 'impact')">✦ Suggérer avec l'IA</button>
+  </div>
+
+  <div class="section-label">La différenciation</div>
+  <div class="field">
+    <label>Pourquoi les solutions traditionnelles ne fonctionnent pas ?</label>
+    <textarea id="f-solutions" rows="3" placeholder="Ex : Les agences sont trop chères, les formations génériques ne sont pas adaptées au contexte de l'entreprise, les outils IA sans méthode créent du contenu sans âme..."></textarea>
+    <button class="ai-suggest" onclick="suggestField('f-solutions', 'solutions')">✦ Suggérer avec l'IA</button>
+  </div>
+  <div class="field">
+    <label>Pourquoi ta solution est supérieure ?</label>
+    <textarea id="f-superieure" rows="3" placeholder="Ex : Formation sur mesure dans leur entreprise, méthode IA + terrain, résultats en 6 semaines, économie de 10h/semaine par collaborateur..."></textarea>
+    <button class="ai-suggest" onclick="suggestField('f-superieure', 'superieure')">✦ Suggérer avec l'IA</button>
+  </div>
+
+  <div class="section-label">Les croyances à construire</div>
+  <p style="font-size:.83rem;color:var(--muted);margin-bottom:12px">Qu'est-ce que ton audience doit croire avant d'acheter ? (méthode Antoine BM)</p>
+  <div class="croyances-list" id="croyances-list">
+    <div class="croyance-item"><div class="croyance-num">1</div><input type="text" placeholder="Ex : Mon tapis est un danger pour ma santé (gravité du problème)" /></div>
+    <div class="croyance-item"><div class="croyance-num">2</div><input type="text" placeholder="Ex : Passer l'aspirateur ne suffit pas (solutions traditionnelles inefficaces)" /></div>
+    <div class="croyance-item"><div class="croyance-num">3</div><input type="text" placeholder="Ex : Il existe une méthode professionnelle efficace (supériorité de la solution)" /></div>
+  </div>
+  <button class="add-croyance" onclick="addCroyance()">+ Ajouter une croyance</button>
+  <button class="ai-suggest" style="margin-top:8px" onclick="suggestCroyances()">✦ Générer les croyances avec l'IA</button>
+
+  <hr class="divider" />
+
+  <div style="display:flex;gap:12px">
+    <button class="btn btn-primary" id="btn-save-fondations" onclick="saveFondations()">↗ Sauvegarder dans Notion</button>
+    <button class="btn btn-outline" onclick="switchTab('contenu')">Créer du contenu →</button>
+  </div>
+
+</div>
+
+<!-- ══ TAB 2 — STRATÉGIE ══ -->
+<div class="panel" id="tab-strategie">
+
+  <div class="info-box">
+    <strong>Stratégie Reels Instagram</strong><br>
+    Définis ton type d'offre et ton rythme. Claude génère ton planning hebdomadaire avec le bon mix de Reels pour construire les croyances et vendre.
+  </div>
+
+  <!-- Sélecteur offre -->
+  <div class="offre-selector" style="margin-bottom:24px">
+    <label>Sur quelle offre travailles-tu ?</label>
+    <select id="s-offre-select" onchange="selectOffreStrategie(this.value)" style="width:100%;margin-top:6px">
+      <option value="">— Sélectionne une offre —</option>
+    </select>
+  </div>
+
+  <div class="section-label">Type d'offre</div>
+  <div class="offre-type-grid">
+    <div class="offre-type-card selected" id="type-service" onclick="selectType('service')">
+      <div class="type-icon">🤝</div>
+      <h4>Service</h4>
+      <p>Coaching, accompagnement, consulting, audit...</p>
+    </div>
+    <div class="offre-type-card" id="type-produit" onclick="selectType('produit')">
+      <div class="type-icon">📦</div>
+      <h4>Produit</h4>
+      <p>Formation, template, outil, ressource...</p>
+    </div>
+  </div>
+
+  <div class="field-row" style="margin-bottom:20px">
+    <div class="field">
+      <label>Prix de l'offre (€)</label>
+      <input type="number" id="s-prix" placeholder="Ex : 2000" />
+    </div>
+    <div class="field">
+      <label>CTA principal</label>
+      <select id="s-cta">
+        <option value="DM">Envoie-moi un DM</option>
+        <option value="lien bio">Lien en bio</option>
+        <option value="commentaire">Commente pour recevoir</option>
+        <option value="appel">Réserve un appel</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="section-label">Rythme de publication</div>
+  <div class="rythme-grid">
+    <div class="rythme-card" id="rythme-3" onclick="selectRythme(3)">
+      <div class="rythme-num">3</div>
+      <p>Reels / semaine</p>
+      <p style="font-size:.7rem;margin-top:4px;color:var(--border)">Démarrage</p>
+    </div>
+    <div class="rythme-card selected" id="rythme-5" onclick="selectRythme(5)">
+      <div class="rythme-num">5</div>
+      <p>Reels / semaine</p>
+      <p style="font-size:.7rem;margin-top:4px;color:var(--green)">Recommandé</p>
+    </div>
+    <div class="rythme-card" id="rythme-7" onclick="selectRythme(7)">
+      <div class="rythme-num">7</div>
+      <p>Reels / semaine</p>
+      <p style="font-size:.7rem;margin-top:4px;color:var(--border)">Intensif</p>
+    </div>
+  </div>
+
+  <div class="section-label">Semaine de départ</div>
+  <div class="field" style="max-width:220px">
+    <label>Date du lundi</label>
+    <input type="date" id="s-semaine" />
+  </div>
+
+  <button class="btn btn-primary btn-block" id="btn-planning" onclick="genererPlanning()" style="margin-bottom:28px">
+    📅 Générer le planning de la semaine
+  </button>
+
+  <!-- RÉSULTATS PLANNING -->
+  <div id="planning-results" style="display:none">
+
+    <div class="section-label">Tunnel de vente</div>
+    <div class="tunnel-bar" id="tunnel-bar"></div>
+    <div class="tunnel-legend">
+      <div class="tunnel-legend-item"><div class="legend-dot" style="background:var(--red)"></div> Attirer</div>
+      <div class="tunnel-legend-item"><div class="legend-dot" style="background:var(--orange)"></div> Éduquer</div>
+      <div class="tunnel-legend-item"><div class="legend-dot" style="background:var(--blue)"></div> Prouver</div>
+      <div class="tunnel-legend-item"><div class="legend-dot" style="background:var(--green)"></div> Convertir</div>
+    </div>
+
+    <div class="section-label">Planning de la semaine</div>
+    <div class="planning-grid" id="planning-grid"></div>
+
+    <button class="btn btn-green btn-block" id="btn-save-planning" onclick="savePlanning()">
+      ↗ Envoyer tout dans Notion
+    </button>
+  </div>
+
+</div>
+
+<!-- ══ TAB 3 — CONTENU ══ -->
+<div class="panel" id="tab-contenu">
+
+  <!-- CHARGER UNE FICHE EXISTANTE -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <h4>📋 Charger une fiche depuis Notion</h4>
+      <button class="btn-sm" onclick="loadFichesNotion()">↺ Rafraîchir</button>
+    </div>
+    <div class="card-body" style="padding:12px">
+      <div style="display:flex;gap:10px;align-items:center">
+        <select id="c-fiche-select" onchange="chargerFiche(this.value)" style="flex:1">
+          <option value="">— Sélectionne un Reel à compléter —</option>
+        </select>
+      </div>
+      <div id="fiche-resume" style="display:none;margin-top:10px;background:var(--surface2);border-radius:8px;padding:10px;font-size:.81rem;color:var(--muted);line-height:1.6"></div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+    <div style="flex:1;height:1px;background:var(--border)"></div>
+    <span style="font-size:.78rem;color:var(--muted)">ou remplis manuellement</span>
+    <div style="flex:1;height:1px;background:var(--border)"></div>
+  </div>
+
+  <!-- Sélecteur offre -->
+  <div class="offre-selector">
+    <label>Sur quelle offre travailles-tu ?</label>
+    <div style="display:flex;gap:10px;align-items:center">
+      <select id="c-offre-select" onchange="selectOffre(this.value)" style="flex:1">
+        <option value="">⏳ Chargement des offres...</option>
+      </select>
+      <button class="btn-sm" onclick="loadOffres()">↺</button>
+      <button class="btn-sm" onclick="switchTab('fondations')">+ Nouvelle</button>
+    </div>
+    <div id="offre-resume" style="display:none;margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px;font-size:.82rem;color:var(--muted);line-height:1.6"></div>
+  </div>
+
+  <div class="field-row-3">
+    <div class="field">
+      <label>Croyance à cibler</label>
+      <select id="c-croyance">
+        <option value="">✦ Suggérer par l'IA</option>
+        <option>Gravité du problème</option>
+        <option>Inefficacité solutions existantes</option>
+        <option>Supériorité de la méthode</option>
+        <option>Légitimité du formateur</option>
+        <option>Urgence d'agir</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Format</label>
+      <select id="c-format">
+        <option>Reel</option><option>Carrousel</option><option>Story</option><option>Photo</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Plateforme</label>
+      <select id="c-plateforme">
+        <option>Instagram</option><option>LinkedIn</option><option>TikTok</option><option>YouTube</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Idée / angle du post (optionnel — laisse vide pour que Claude décide)</label>
+    <textarea id="c-idee" rows="2" placeholder="Ex : Montrer que passer 3h sur un post LinkedIn sans méthode IA est contre-productif..."></textarea>
+  </div>
+  <div class="field">
+    <label>Contexte additionnel</label>
+    <textarea id="c-contexte" rows="2" placeholder="Ex : Ciblé DRH, ton expert mais accessible, inclure un exemple chiffré..."></textarea>
+  </div>
+
+  <button class="btn btn-primary btn-block" id="btn-generate" onclick="generateContenu()" style="margin-bottom:24px">
+    ✦ Générer le contenu
+  </button>
+
+  <!-- RÉSULTATS -->
+  <div id="contenu-results" style="display:none">
+
+    <!-- Accroche suggérée -->
+    <div class="section-label">Choisissez votre accroche</div>
+    <div class="hooks-grid" id="hooks-grid"></div>
+
+    <!-- Corps -->
+    <div class="card">
+      <div class="card-header"><h4>Corps du post</h4><button class="copy-btn" onclick="copyEl('r-corps')">Copier</button></div>
+      <div class="card-body"><textarea id="r-corps" rows="8"></textarea></div>
+    </div>
+
+    <!-- Script FLORA -->
+    <div class="card">
+      <div class="card-header">
+        <h4>🌸 Script / Brief FLORA</h4>
+        <div style="display:flex;gap:8px">
+          <span class="badge badge-purple" id="r-format-badge"></span>
+          <button class="copy-btn" onclick="copyEl('r-flora')">Copier</button>
+        </div>
+      </div>
+      <div class="card-body"><textarea id="r-flora" rows="5"></textarea></div>
+    </div>
+
+    <!-- Brief visuel -->
+    <div class="card">
+      <div class="card-header"><h4>Brief visuel (instructions générales)</h4><button class="copy-btn" onclick="copyEl('r-brief')">Copier</button></div>
+      <div class="card-body"><textarea id="r-brief" rows="3"></textarea></div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Titre + save -->
+    <div class="field">
+      <label>Titre de la fiche (pour Notion)</label>
+      <input type="text" id="r-titre" placeholder="Titre du post..." />
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Date de publication</label>
+        <input type="date" id="r-date" />
+      </div>
+      <div class="field">
+        <label>Statut</label>
+        <select id="r-statut">
+          <option>Idée</option><option>En rédaction</option><option>Brief FLORA envoyé</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px">
+      <button class="btn btn-green" id="btn-save-contenu" onclick="saveContenu()">↗ Enregistrer dans Notion</button>
+      <button class="btn btn-outline" onclick="switchTab('publication')">Ajouter le média →</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ TAB 4 — PUBLICATION ══ -->
+<div class="panel" id="tab-publication">
+
+  <div class="info-box">
+    <strong>Étape finale</strong> — Le contenu texte est dans Notion. Tu as créé le média dans FLORA. Il ne reste qu'à assembler et programmer la publication.
+  </div>
+
+  <!-- Pipeline statut -->
+  <div class="pipeline">
+    <div class="pipeline-step done"><span class="step-icon">✓</span>Fondations</div>
+    <div class="pipeline-step done"><span class="step-icon">✓</span>Contenu texte</div>
+    <div class="pipeline-step active"><span class="step-icon">🌸</span>Média FLORA</div>
+    <div class="pipeline-step"><span class="step-icon">📅</span>Programmé</div>
+    <div class="pipeline-step"><span class="step-icon">✅</span>Publié</div>
+  </div>
+
+  <div class="section-label">Le post</div>
+  <div class="field-row">
+    <div class="field"><label>Titre du post (pour retrouver dans Notion)</label><input type="text" id="p-titre" placeholder="Titre exact de la fiche Notion..." /></div>
+    <div class="field"><label>ID de la page Notion (optionnel)</label><input type="text" id="p-page-id" placeholder="Coller l'ID depuis l'URL Notion..." /></div>
+  </div>
+
+  <div class="section-label">Le média (créé dans FLORA)</div>
+  <img id="p-preview" class="preview-img" src="" alt="" />
+  <div class="drop-zone" id="p-drop"
+    ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event,'p-preview','p-media-url')">
+    <input type="file" accept="image/*,video/*" onchange="fileSelect(event,'p-preview','p-media-url')" />
+    <div style="font-size:2rem">🎬</div>
+    <p>Glisse ton Reel / image / carrousel ici<br /><span style="font-size:.75rem;color:var(--border)">ou clique pour choisir — MP4, PNG, JPG, WEBP</span></p>
+  </div>
+  <div class="field" style="margin-top:10px">
+    <label>Ou URL du média hébergé (Drive, Dropbox…)</label>
+    <input type="url" id="p-media-url" placeholder="https://..." />
+  </div>
+
+  <div class="section-label">Programmation</div>
+  <div class="field-row-3">
+    <div class="field">
+      <label>Date de publication</label>
+      <input type="date" id="p-date" />
+    </div>
+    <div class="field">
+      <label>Plateforme</label>
+      <select id="p-plateforme">
+        <option>Instagram</option><option>LinkedIn</option><option>TikTok</option><option>YouTube</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Nouveau statut</label>
+      <select id="p-statut">
+        <option>Média reçu</option><option>Prêt à publier</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:8px">
+    <button class="btn btn-outline btn-block" id="btn-publish" onclick="publishPost()">
+      ↗ Notion
+    </button>
+    <button class="btn btn-primary btn-block" id="btn-instagram" onclick="publishToInstagram()" style="background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);border:none">
+      📸 Instagram
+    </button>
+    <button class="btn btn-primary btn-block" id="btn-linkedin" onclick="publishToLinkedIn()" style="background:#0077b5;border:none">
+      💼 LinkedIn
+    </button>
+    <button class="btn btn-primary btn-block" id="btn-youtube" onclick="publishToYouTube()" style="background:#ff0000;border:none">
+      ▶️ YouTube
+    </button>
+  </div>
+  <!-- Input fichier vidéo YouTube (caché) -->
+  <input type="file" id="yt-file-input" accept="video/*" style="display:none" />
+
+</div>
+
+<!-- TOASTS -->
+<div class="toast-container" id="toasts"></div>
+`
+
+  return (
+    <>
+      <Head>
+        <title>Système Editorial IA — The House Lab</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+      <div dangerouslySetInnerHTML={{ __html: htmlBody }} />
+      <script dangerouslySetInnerHTML={{ __html: appJS }} />
     </>
   )
 }
