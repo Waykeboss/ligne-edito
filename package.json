@@ -1,0 +1,14 @@
+{
+  "name": "ligne-edito",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "next dev -p 3456",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "14.2.3",
+    "react": "^18",
+    "react-dom": "^18"
+  }
+}
