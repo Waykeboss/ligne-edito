@@ -54,11 +54,10 @@ async function loadOffres() {
   select.innerHTML = '<option value="">⏳ Chargement...</option>';
 
   try {
-    const url = 'https://corsproxy.io/?' + encodeURIComponent(\`https://api.notion.com/v1/databases/\${dbId}/query\`);
-    const resp = await fetch(url, {
+    const resp = await fetch('/api/notion', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'Notion-Version': '2022-06-28' },
-      body: JSON.stringify({ sorts: [{ property: "Nom de l'offre", direction: 'ascending' }] })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: \`databases/\${dbId}/query\`, method: 'POST', body: { sorts: [{ property: "Nom de l'offre", direction: 'ascending' }] }, token })
     });
     if (!resp.ok) throw new Error('Erreur Notion');
     const data = await resp.json();
@@ -315,25 +314,12 @@ async function handleLinkedInCallback() {
   toast('Connexion LinkedIn en cours...', 'success');
 
   try {
-    const proxy = 'https://corsproxy.io/?url=';
-    const tokenUrl = 'https://www.linkedin.com/oauth/v2/accessToken';
-    const body = new URLSearchParams({
-      grant_type:    'authorization_code',
-      code,
-      redirect_uri:  LI_REDIRECT,
-      client_id:     LI_CLIENT_ID,
-      client_secret: LI_CLIENT_SECRET
-    });
-
-    const resp = await fetch(proxy + encodeURIComponent(tokenUrl), {
+    const resp = await fetch('/api/linkedin-token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString()
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, redirect_uri: LI_REDIRECT })
     });
-
-    const text = await resp.text();
-    let data;
-    try { data = JSON.parse(text); } catch(e) { throw new Error('Réponse invalide : ' + text); }
+    const data = await resp.json();
 
     if (data.access_token) {
       localStorage.setItem('linkedin_token', data.access_token);
@@ -754,13 +740,17 @@ async function loadFichesNotion() {
   select.innerHTML = '<option value="">⏳ Chargement...</option>';
 
   try {
-    const url = 'https://corsproxy.io/?' + encodeURIComponent(\`https://api.notion.com/v1/databases/\${dbId}/query\`);
-    const resp = await fetch(url, {
+    const resp = await fetch('/api/notion', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'Notion-Version': '2022-06-28' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        filter: { property: 'Statut', select: { equals: 'Idée' } },
-        sorts: [{ property: 'Date de publication', direction: 'ascending' }]
+        endpoint: \`databases/\${dbId}/query\`,
+        method: 'POST',
+        body: {
+          filter: { property: 'Statut', select: { equals: 'Idée' } },
+          sorts: [{ property: 'Date de publication', direction: 'ascending' }]
+        },
+        token
       })
     });
     if (!resp.ok) throw new Error('Erreur Notion');
@@ -977,25 +967,23 @@ async function publishToInstagram() {
     }
     if (!igId) throw new Error("Impossible de récupérer l'ID Instagram.");
 
-    // API base + proxy CORS pour les requêtes POST depuis le navigateur
     const apiBase = 'https://graph.instagram.com/v19.0';
-    const proxy   = 'https://corsproxy.io/?url=';
 
     // 2. Créer le conteneur média Instagram
-    const containerResp = await fetch(proxy + encodeURIComponent(\`\${apiBase}/\${igId}/media\`), {
+    const containerResp = await fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_url: mediaUrl, caption, access_token: metaToken })
+      body: JSON.stringify({ url: \`\${apiBase}/\${igId}/media\`, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: { image_url: mediaUrl, caption, access_token: metaToken } })
     });
     const containerData = await containerResp.json();
     if (containerData.error) throw new Error('Erreur média : ' + containerData.error.message);
 
     // 3. Attendre 2s puis publier le conteneur
     await new Promise(r => setTimeout(r, 2000));
-    const publishResp = await fetch(proxy + encodeURIComponent(\`\${apiBase}/\${igId}/media_publish\`), {
+    const publishResp = await fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ creation_id: containerData.id, access_token: metaToken })
+      body: JSON.stringify({ url: \`\${apiBase}/\${igId}/media_publish\`, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: { creation_id: containerData.id, access_token: metaToken } })
     });
     const publishData = await publishResp.json();
     if (publishData.error) throw new Error('Erreur publication : ' + publishData.error.message);
@@ -1034,14 +1022,15 @@ async function publishToLinkedIn() {
 
   const notionId = document.getElementById('p-page-id').value.trim().replace(/-/g,'');
   const mediaUrl = document.getElementById('p-media-url').value.trim();
-  const proxy    = 'https://corsproxy.io/?url=';
 
   setLoading('btn-linkedin', true, 'Publication LinkedIn...');
 
   try {
     // 1. Récupérer l'ID du membre LinkedIn
-    const meResp = await fetch(proxy + encodeURIComponent('https://api.linkedin.com/v2/userinfo'), {
-      headers: { Authorization: \`Bearer \${token}\` }
+    const meResp = await fetch('/api/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'https://api.linkedin.com/v2/userinfo', method: 'GET', headers: { Authorization: \`Bearer \${token}\` } })
     });
     const meData = await meResp.json();
     if (!meData.sub) throw new Error('Token LinkedIn invalide ou expiré. Reconnecte-toi dans ⚙️ Config.');
@@ -1051,17 +1040,16 @@ async function publishToLinkedIn() {
 
     if (mediaUrl) {
       // Avec image : 3 étapes
-      // Étape A — Enregistrer l'upload
-      const regResp = await fetch(proxy + encodeURIComponent('https://api.linkedin.com/v2/assets?action=registerUpload'), {
+      const regResp = await fetch('/api/proxy', {
         method: 'POST',
-        headers: { Authorization: \`Bearer \${token}\`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: 'https://api.linkedin.com/v2/assets?action=registerUpload', method: 'POST', headers: { Authorization: \`Bearer \${token}\`, 'Content-Type': 'application/json' }, body: {
           registerUploadRequest: {
             recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
             owner: urn,
             serviceRelationships: [{ relationshipType: 'OWNER', identifier: 'urn:li:userGeneratedContent' }]
           }
-        })
+        }})
       });
       const regData = await regResp.json();
       const uploadUrl = regData.value?.uploadMechanism?.['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest']?.uploadUrl;
@@ -1069,13 +1057,13 @@ async function publishToLinkedIn() {
 
       if (!uploadUrl || !asset) throw new Error('Erreur enregistrement image LinkedIn');
 
-      // Étape B — Uploader l'image depuis l'URL publique
+      // Étape B — Uploader l'image
       const imgResp   = await fetch(mediaUrl);
       const imgBlob   = await imgResp.blob();
-      await fetch(proxy + encodeURIComponent(uploadUrl), {
-        method: 'PUT',
-        headers: { Authorization: \`Bearer \${token}\`, 'Content-Type': imgBlob.type || 'image/jpeg' },
-        body: imgBlob
+      await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: uploadUrl, method: 'PUT', headers: { Authorization: \`Bearer \${token}\`, 'Content-Type': 'image/jpeg' } })
       });
 
       shareBody = {
@@ -1091,7 +1079,6 @@ async function publishToLinkedIn() {
         visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' }
       };
     } else {
-      // Post texte seul
       shareBody = {
         author: urn,
         lifecycleState: 'PUBLISHED',
@@ -1106,10 +1093,10 @@ async function publishToLinkedIn() {
     }
 
     // Publier
-    const postResp = await fetch(proxy + encodeURIComponent('https://api.linkedin.com/v2/ugcPosts'), {
+    const postResp = await fetch('/api/proxy', {
       method: 'POST',
-      headers: { Authorization: \`Bearer \${token}\`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(shareBody)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'https://api.linkedin.com/v2/ugcPosts', method: 'POST', headers: { Authorization: \`Bearer \${token}\`, 'Content-Type': 'application/json' }, body: shareBody })
     });
     const postData = await postResp.json();
     if (postData.status >= 400 || postData.message) throw new Error(postData.message || JSON.stringify(postData));
@@ -1152,11 +1139,10 @@ async function callClaude(prompt) {
 
 async function notionPost(endpoint, body) {
   const token = localStorage.getItem('notion_token');
-  const url = 'https://corsproxy.io/?' + encodeURIComponent(\`https://api.notion.com/v1/\${endpoint}\`);
-  const resp = await fetch(url, {
+  const resp = await fetch('/api/notion', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'Notion-Version': '2022-06-28' },
-    body: JSON.stringify(body)
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint, method: 'POST', body, token })
   });
   if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.message || \`Erreur \${resp.status}\`); }
   return resp.json();
@@ -1164,11 +1150,10 @@ async function notionPost(endpoint, body) {
 
 async function notionPatch(endpoint, body) {
   const token = localStorage.getItem('notion_token');
-  const url = 'https://corsproxy.io/?' + encodeURIComponent(\`https://api.notion.com/v1/\${endpoint}\`);
-  const resp = await fetch(url, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'Notion-Version': '2022-06-28' },
-    body: JSON.stringify(body)
+  const resp = await fetch('/api/notion', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint, method: 'PATCH', body, token })
   });
   if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.message || \`Erreur \${resp.status}\`); }
   return resp.json();
