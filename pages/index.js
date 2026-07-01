@@ -1,4 +1,5 @@
 import Head from 'next/head'
+import { useEffect } from 'react'
 
 const appJS = `
 /* ════════════════════════════════
@@ -15,15 +16,15 @@ const DB_CALENDRIER = '774c6810-4ba9-4e95-85cb-a6b11df9d46a';
 /* ════════════════════════════════
    INIT
 ════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
   const d = new Date(); d.setDate(d.getDate() + 3);
   const ds = d.toISOString().split('T')[0];
-  document.getElementById('r-date').value = ds;
-  document.getElementById('p-date').value = ds;
+  if (document.getElementById('r-date')) document.getElementById('r-date').value = ds;
+  if (document.getElementById('p-date')) document.getElementById('p-date').value = ds;
   // Prochain lundi
   const lundi = new Date();
   lundi.setDate(lundi.getDate() + ((1 + 7 - lundi.getDay()) % 7 || 7));
-  document.getElementById('s-semaine').value = lundi.toISOString().split('T')[0];
+  if (document.getElementById('s-semaine')) document.getElementById('s-semaine').value = lundi.toISOString().split('T')[0];
 
   // Gérer les callbacks OAuth
   if (window.location.hash.includes('access_token=')) {
@@ -38,7 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadOffres();
     loadFichesNotion();
   }
-});
+}
+initApp();
 
 /* ════════════════════════════════
    CHARGER LES OFFRES DEPUIS NOTION
@@ -681,7 +683,7 @@ async function generateContenu() {
 
   const croyanceInstr = croyance
     ? \`La croyance à construire dans ce post est : "\${croyance}".\`
-    : "Choisis la croyance la plus pertinente à construire parmi : Gravité du problème / Inefficacité solutions existantes / Supériorité de la méthode / Légitimité du formateur / Urgence d'agir. Indique-la dans \"croyance\".";
+    : "Choisis la croyance la plus pertinente à construire parmi : Gravité du problème / Inefficacité solutions existantes / Supériorité de la méthode / Légitimité du formateur / Urgence d'agir. Indique-la dans 'croyance'.";
 
   const fondationsContext = selectedOffre ? \`
 FONDATIONS DE L'OFFRE :
@@ -1674,6 +1676,13 @@ export default function Home() {
 <div class="toast-container" id="toasts"></div>
 `
 
+  useEffect(() => {
+    const s = document.createElement('script')
+    s.textContent = appJS
+    document.body.appendChild(s)
+    return () => { if (s.parentNode) s.parentNode.removeChild(s) }
+  }, [])
+
   return (
     <>
       <Head>
@@ -1681,7 +1690,6 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div dangerouslySetInnerHTML={{ __html: htmlBody }} />
-      <script dangerouslySetInnerHTML={{ __html: appJS }} />
     </>
   )
 }
