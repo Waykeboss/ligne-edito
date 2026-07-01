@@ -6,6 +6,7 @@
   --text: #f4f4f5; --muted: #a1a1aa; --radius: 12px;
 }
 body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+.settings-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
 
 /* ── HEADER ── */
 .header {

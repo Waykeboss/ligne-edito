@@ -34,7 +34,7 @@ function initApp() {
   }
 
   if (!localStorage.getItem('anthropic_key') || !localStorage.getItem('notion_token')) {
-    setTimeout(() => openSettings(), 500);
+    setTimeout(() => toast('⚙️ Configure tes clés API dans Config pour commencer', 'info'), 300);
   } else {
     loadOffres();
     loadFichesNotion();
@@ -165,7 +165,7 @@ function switchTab(tab) {
 /* ── YouTube OAuth ── */
 const YT_CLIENT_ID     = '${process.env.NEXT_PUBLIC_YT_CLIENT_ID}';
 const YT_CLIENT_SECRET = '${process.env.NEXT_PUBLIC_YT_CLIENT_SECRET}';
-const YT_REDIRECT      = 'https://ligne-edito-next.vercel.app';
+const YT_REDIRECT      = 'https://ligne-edito-next.vercel.app/settings';
 const YT_SCOPE         = 'https://www.googleapis.com/auth/youtube.upload';
 
 function connectYouTube() {
@@ -278,7 +278,7 @@ async function publishToYouTube() {
 /* ── LinkedIn OAuth ── */
 const LI_CLIENT_ID     = '${process.env.NEXT_PUBLIC_LI_CLIENT_ID}';
 const LI_CLIENT_SECRET = '${process.env.NEXT_PUBLIC_LI_CLIENT_SECRET}';
-const LI_REDIRECT      = 'https://ligne-edito-next.vercel.app';
+const LI_REDIRECT      = 'https://ligne-edito-next.vercel.app/settings';
 const LI_SCOPE         = 'openid profile w_member_social';
 
 function connectLinkedIn() {
@@ -365,25 +365,7 @@ function updateLinkedInStatus() {
 }
 
 function openSettings() {
-  document.getElementById('s-anthropic').value = localStorage.getItem('anthropic_key') || '';
-  document.getElementById('s-notion-token').value = localStorage.getItem('notion_token') || '';
-  document.getElementById('s-db-fondations').value = localStorage.getItem('db_fondations') || DB_FONDATIONS;
-  document.getElementById('s-db-calendrier').value = localStorage.getItem('db_calendrier') || DB_CALENDRIER;
-  document.getElementById('s-meta-token').value = localStorage.getItem('meta_token') || '';
-  updateLinkedInStatus();
-  updateYouTubeStatus();
-  document.getElementById('settingsModal').classList.remove('hidden');
-}
-function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
-function saveSettings() {
-  localStorage.setItem('anthropic_key', document.getElementById('s-anthropic').value.trim());
-  localStorage.setItem('notion_token', document.getElementById('s-notion-token').value.trim());
-  localStorage.setItem('db_fondations', document.getElementById('s-db-fondations').value.trim());
-  localStorage.setItem('db_calendrier', document.getElementById('s-db-calendrier').value.trim());
-  localStorage.setItem('meta_token', document.getElementById('s-meta-token').value.trim());
-  const liToken = document.getElementById('s-linkedin-token').value.trim();
-  if (liToken) localStorage.setItem('linkedin_token', liToken);
-  closeSettings(); toast('✓ Configuration sauvegardée', 'success');
+  window.location.href = '/settings';
 }
 
 /* ════════════════════════════════
@@ -1233,52 +1215,11 @@ function previewFile(file, imgId, urlId) {
 
 export default function Home() {
   const htmlBody = `
-<!-- ══ MODAL SETTINGS ══ -->
-<div class="modal-overlay hidden" id="settingsModal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeSettings()">✕</button>
-    <h2>⚙️ Configuration</h2>
-    <p class="sub">Clés stockées localement dans votre navigateur.</p>
-    <div class="field"><label>Clé API Anthropic</label><input type="password" id="s-anthropic" placeholder="sk-ant-..." /></div>
-    <div class="field"><label>Token Notion Integration</label><input type="password" id="s-notion-token" placeholder="secret_..." /></div>
-    <div class="field"><label>ID base Fondations</label><input type="text" id="s-db-fondations" /></div>
-    <div class="field"><label>ID base Calendrier</label><input type="text" id="s-db-calendrier" /></div>
-    <div class="field"><label>Token Instagram (IGQ...)</label><input type="password" id="s-meta-token" placeholder="IGQVJx..." /></div>
-
-    <div class="field" style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px;margin-top:4px">
-      <label>LinkedIn — <span id="li-status" style="color:var(--muted);font-weight:400">non connecté</span></label>
-      <button class="btn btn-outline btn-block" onclick="connectLinkedIn()" id="btn-li-connect" style="margin-top:8px">
-        💼 Connecter LinkedIn
-      </button>
-      <input type="password" id="s-linkedin-token" placeholder="Colle ton token LinkedIn ici" style="margin-top:8px" />
-    </div>
-
-    <div class="field" style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px;margin-top:4px">
-      <label>YouTube — <span id="yt-status" style="color:var(--muted);font-weight:400">non connecté</span></label>
-      <button class="btn btn-outline btn-block" onclick="connectYouTube()" id="btn-yt-connect" style="margin-top:8px">
-        ▶️ Connecter YouTube
-      </button>
-    </div>
-
-    <div class="info-setup">
-      <strong>Token Notion</strong> → <a href="https://www.notion.so/my-integrations" target="_blank" rel="noreferrer">notion.so/my-integrations</a> → Créer → copier <code>secret_...</code><br />
-      Puis dans chaque base Notion → ··· → <strong>Connections</strong> → ajouter l'intégration<br /><br />
-      <strong>Token Instagram</strong> → Graph API Explorer → permissions <code>instagram_business_basic</code> + <code>instagram_business_content_publish</code><br /><br />
-      <strong>LinkedIn</strong> → Cliquer "Connecter LinkedIn" → autoriser → token automatique<br /><br />
-      <strong>YouTube</strong> → Cliquer "Connecter YouTube" → compte Google → autoriser
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeSettings()">Annuler</button>
-      <button class="btn btn-primary" onclick="saveSettings()">✓ Sauvegarder</button>
-    </div>
-  </div>
-</div>
-
 <!-- ══ HEADER ══ -->
 <header class="header">
   <div class="logo"><div class="logo-icon">✦</div> Système Editorial IA</div>
   <div class="header-right">
-    <button class="btn-sm" onclick="openSettings()">⚙️ Config</button>
+    <a href="/settings" class="btn-sm" style="text-decoration:none">⚙️ Config</a>
   </div>
 </header>
 
