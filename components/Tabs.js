@@ -3,6 +3,7 @@ const TABS = [
   { id: 'strategie', label: '📅 Stratégie' },
   { id: 'contenu', label: '✦ Contenu' },
   { id: 'publication', label: '↗ Publication' },
+  { id: 'analyse', label: '📊 Analyse' },
 ]
 
 export default function Tabs({ active, onChange }) {

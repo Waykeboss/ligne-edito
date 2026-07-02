@@ -6,6 +6,7 @@ import TabFondations from '../components/TabFondations'
 import TabStrategie from '../components/TabStrategie'
 import TabContenu from '../components/TabContenu'
 import TabPublication from '../components/TabPublication'
+import TabAnalyse from '../components/TabAnalyse'
 import { useToast } from '../components/Toast'
 import { loadOffresFromNotion } from '../lib/api'
 
@@ -74,6 +75,9 @@ export default function Home() {
       </div>
       <div className={`panel${activeTab === 'publication' ? ' active' : ''}`}>
         <TabPublication publicationData={publicationData} />
+      </div>
+      <div className={`panel${activeTab === 'analyse' ? ' active' : ''}`}>
+        <TabAnalyse />
       </div>
     </>
   )
