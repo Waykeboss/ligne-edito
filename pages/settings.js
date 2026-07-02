@@ -213,7 +213,7 @@ export default function Settings() {
 
   const htmlBody = `
 <header class="header">
-  <div class="logo"><a href="/" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px"><div class="logo-icon">✦</div> Système Editorial IA</a></div>
+  <div class="logo"><a href="/" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:12px"><img src="/brand/hl-icon.png" alt="House Lab" style="height:32px;width:32px;filter:invert(1);object-fit:contain" /> Système Editorial IA</a></div>
   <div class="header-right">
     <a href="/" class="btn-sm" style="text-decoration:none">← Retour</a>
   </div>
@@ -295,8 +295,9 @@ export default function Settings() {
   return (
     <>
       <Head>
-        <title>Configuration — Système Editorial IA</title>
+        <title>Configuration — House Lab</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
       </Head>
       <div dangerouslySetInnerHTML={{ __html: htmlBody }} />
     </>

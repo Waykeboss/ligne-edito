@@ -1202,7 +1202,7 @@ export default function Home() {
   const htmlBody = `
 <!-- ══ HEADER ══ -->
 <header class="header">
-  <div class="logo"><div class="logo-icon">✦</div> Système Editorial IA</div>
+  <div class="logo"><img src="/brand/hl-icon.png" alt="House Lab" style="height:32px;width:32px;filter:invert(1);object-fit:contain" /> Système Editorial IA</div>
   <div class="header-right">
     <a href="/settings" class="btn-sm" style="text-decoration:none">⚙️ Config</a>
   </div>
@@ -1612,8 +1612,9 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Système Editorial IA — The House Lab</title>
+        <title>Système Editorial IA — House Lab</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
       </Head>
       <div dangerouslySetInnerHTML={{ __html: htmlBody }} />
     </>
