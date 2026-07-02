@@ -34,22 +34,21 @@ function initSettings() {
   if (window.location.hash.includes('access_token=')) {
     handleYouTubeCallback();
   } else if (window.location.search.includes('code=')) {
-    // Determine if it's LinkedIn or Instagram callback
     var params = new URLSearchParams(window.location.search);
+    var code = params.get('code');
     var state = params.get('state');
+    // Clean URL immediately to prevent re-use on reload
+    window.history.replaceState({}, '', window.location.pathname);
     var savedLiState = localStorage.getItem('li_state');
     var pendingIg = localStorage.getItem('ig_pending');
     if (pendingIg === 'true') {
-      handleInstagramCallback();
+      handleInstagramCallback(code);
     } else if (savedLiState && state === savedLiState) {
-      handleLinkedInCallback();
+      handleLinkedInCallback(code);
+    } else if (!savedLiState) {
+      handleInstagramCallback(code);
     } else {
-      // Try Instagram first, then LinkedIn
-      if (pendingIg || !savedLiState) {
-        handleInstagramCallback();
-      } else {
-        handleLinkedInCallback();
-      }
+      handleLinkedInCallback(code);
     }
   }
 }
@@ -61,11 +60,8 @@ function connectInstagram() {
   window.location.href = url;
 }
 
-async function handleInstagramCallback() {
-  var params = new URLSearchParams(window.location.search);
-  var code = params.get('code');
+async function handleInstagramCallback(code) {
   if (!code) return;
-  window.history.replaceState({}, '', window.location.pathname);
   localStorage.removeItem('ig_pending');
   toast('Connexion Instagram en cours...', 'success');
 
@@ -143,16 +139,8 @@ function connectLinkedIn() {
   window.location.href = url;
 }
 
-async function handleLinkedInCallback() {
-  var params = new URLSearchParams(window.location.search);
-  var code   = params.get('code');
-  var error  = params.get('error');
-  if (!code && !error) return;
-  window.history.replaceState({}, '', window.location.pathname);
-  if (error) {
-    toast("LinkedIn a refus\\u00e9 l'autorisation : " + (params.get('error_description') || error), 'error');
-    return;
-  }
+async function handleLinkedInCallback(code) {
+  if (!code) return;
   toast('Connexion LinkedIn en cours...', 'success');
   try {
     var resp = await fetch('/api/linkedin-token', {
